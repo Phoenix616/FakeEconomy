@@ -29,6 +29,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +68,34 @@ public final class FakeEconomy extends JavaPlugin {
             }
         }
         return false;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return matching(args[0], "balance", "setbalance");
+        } else if (args.length == 2) {
+            return getServer().getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
+        } else if (args.length == 3 && "setbalance".equalsIgnoreCase(args[0])) {
+            if (args[2].length() == 1) {
+                return Arrays.asList("-1", "0", args[2], args[2] + "0", args[2] + "00", args[2] + "000", args[2] + "0000", args[2] +  "00000", args[2] + "000000");
+            } else {
+                return Arrays.asList("-1", "0", "1", "10", "100", "1000", "10000", "100000", "1000000");
+            }
+        }
+        return null;
+    }
+
+    private List<String> matching(String arg, String... possibilities) {
+        List<String> completions = new ArrayList<>();
+        for (String s : possibilities) {
+            if (s.toLowerCase().startsWith(arg.toLowerCase())) {
+                completions.add(s);
+            }
+        }
+        return completions;
     }
 
     public class VaultEconomy extends AbstractEconomy {
