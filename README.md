@@ -1,6 +1,6 @@
 # FakeEconomy
 
-Simple, in-memory Vault economy provider. **Not a real economy plguin!** Only useful for testing. Logs all transactions to console.
+Simple, in-memory Vault economy provider. **Not a real economy plugin!** Only useful for testing. Logs all transactions to console.
 
 With bank account support (prefixed with `bank:` in the account name)
 
