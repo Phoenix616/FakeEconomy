@@ -23,6 +23,7 @@ import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,7 +37,8 @@ import java.util.stream.Collectors;
 
 public final class FakeEconomy extends JavaPlugin {
 
-    Map<String, BigDecimal> balances = new HashMap<>();
+    private static final BigDecimal DEFAULT_BALANCE = BigDecimal.valueOf(1000000);
+    private Map<String, BigDecimal> balances = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -48,14 +50,14 @@ public final class FakeEconomy extends JavaPlugin {
         if (args.length > 0) {
             if ("balance".equalsIgnoreCase(args[0])) {
                 if (args.length > 1) {
-                    sender.sendMessage(args[1] + "'s Balance: " + balances.getOrDefault(args[1].toLowerCase(), BigDecimal.ZERO).toPlainString());
+                    sender.sendMessage(args[1] + "'s Balance: " + balances.getOrDefault(args[1].toLowerCase(), DEFAULT_BALANCE).toPlainString());
                     return true;
                 }
             } else if ("setbalance".equalsIgnoreCase(args[0])) {
                 if (args.length > 2) {
                     try {
                         balances.put(args[1].toLowerCase(), BigDecimal.valueOf(Double.parseDouble(args[2])));
-                        sender.sendMessage(args[1] + "'s Balance set to " + balances.getOrDefault(args[1].toLowerCase(), BigDecimal.ZERO).toPlainString());
+                        sender.sendMessage(args[1] + "'s Balance set to " + balances.getOrDefault(args[1].toLowerCase(), DEFAULT_BALANCE).toPlainString());
                         return true;
                     } catch (NumberFormatException e) {
                         sender.sendMessage(e.getMessage());
@@ -106,7 +108,7 @@ public final class FakeEconomy extends JavaPlugin {
 
         @Override
         public boolean hasAccount(String s) {
-            return balances.containsKey(s.toLowerCase());
+            return getBalance(s) > -1;
         }
 
         @Override
@@ -116,7 +118,7 @@ public final class FakeEconomy extends JavaPlugin {
 
         @Override
         public double getBalance(String s) {
-            return balances.getOrDefault(s.toLowerCase(), BigDecimal.ZERO).doubleValue();
+            return balances.getOrDefault(s.toLowerCase(), DEFAULT_BALANCE).doubleValue();
         }
 
         @Override
@@ -126,7 +128,7 @@ public final class FakeEconomy extends JavaPlugin {
 
         @Override
         public boolean has(String s, double v) {
-            return balances.getOrDefault(s.toLowerCase(), BigDecimal.ZERO).compareTo(BigDecimal.valueOf(v)) >= 0;
+            return balances.getOrDefault(s.toLowerCase(), DEFAULT_BALANCE).compareTo(BigDecimal.valueOf(v)) >= 0;
         }
 
         @Override
@@ -136,12 +138,17 @@ public final class FakeEconomy extends JavaPlugin {
 
         @Override
         public EconomyResponse withdrawPlayer(String s, double v) {
-            getLogger().log(Level.INFO, "Withdraw " + v + " from " + s + "(Balance: " + getBalance(s) + ")");
-            if (has(s, v)) {
-                balances.put(s.toLowerCase(), balances.getOrDefault(s.toLowerCase(), BigDecimal.ZERO).subtract(BigDecimal.valueOf(v)));
-                return new EconomyResponse(v, getBalance(s), EconomyResponse.ResponseType.SUCCESS, null);
+            if (hasAccount(s)) {
+                if (has(s, v)) {
+                    getLogger().log(Level.INFO, "Withdraw " + v + " from " + s + "(Balance: " + getBalance(s) + ")");
+                    balances.put(s.toLowerCase(), balances.getOrDefault(s.toLowerCase(), DEFAULT_BALANCE).subtract(BigDecimal.valueOf(v)));
+                    return new EconomyResponse(v, getBalance(s), EconomyResponse.ResponseType.SUCCESS, null);
+                }
+                getLogger().log(Level.INFO, "Withdrawing " + v + " from " + s + " (Balance: " + getBalance(s) + ") failed. Not enough money.");
+                return new EconomyResponse(0, getBalance(s), EconomyResponse.ResponseType.FAILURE, "Not enough money");
             }
-            return new EconomyResponse(0, getBalance(s), EconomyResponse.ResponseType.FAILURE, "Not enough money");
+            getLogger().log(Level.INFO, "Withdrawing " + v + " from " + s + " failed. No Account.");
+            return new EconomyResponse(0, getBalance(s), EconomyResponse.ResponseType.FAILURE, "No account");
         }
 
         @Override
@@ -151,9 +158,13 @@ public final class FakeEconomy extends JavaPlugin {
 
         @Override
         public EconomyResponse depositPlayer(String s, double v) {
-            getLogger().log(Level.INFO, "Deposit " + v + " to " + s + " (Balance: " + getBalance(s) + ")");
-            balances.put(s.toLowerCase(), balances.getOrDefault(s.toLowerCase(), BigDecimal.ZERO).add(BigDecimal.valueOf(v)));
-            return new EconomyResponse(v, getBalance(s), EconomyResponse.ResponseType.SUCCESS, null);
+            if (hasAccount(s)) {
+                getLogger().log(Level.INFO, "Deposit " + v + " to " + s + " (Balance: " + getBalance(s) + ")");
+                balances.put(s.toLowerCase(), balances.getOrDefault(s.toLowerCase(), DEFAULT_BALANCE).add(BigDecimal.valueOf(v)));
+                return new EconomyResponse(v, getBalance(s), EconomyResponse.ResponseType.SUCCESS, null);
+            }
+            getLogger().log(Level.INFO, "Deposit " + v + " to " + s + " failed. No Account.");
+            return new EconomyResponse(0, getBalance(s), EconomyResponse.ResponseType.FAILURE, "No account");
         }
 
         @Override
