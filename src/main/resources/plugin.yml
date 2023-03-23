@@ -5,6 +5,7 @@ api-version: 1.13
 depend: [Vault]
 authors: [Phoenix616]
 description: Not a real economy...
+folia-supported: true
 commands:
   fakeeconomy:
     aliases:

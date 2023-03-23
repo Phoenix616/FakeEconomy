@@ -21,6 +21,7 @@ package de.themoep.fakeeconomy;
 import net.milkbowl.vault.economy.AbstractEconomy;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -31,16 +32,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public final class FakeEconomy extends JavaPlugin {
 
     private static final BigDecimal DEFAULT_BALANCE = BigDecimal.valueOf(1000000);
-    private Map<String, BigDecimal> balances = new HashMap<>();
+    private Map<String, BigDecimal> balances = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -144,6 +145,11 @@ public final class FakeEconomy extends JavaPlugin {
         @Override
         public boolean hasAccount(String s, String s1) {
             return hasAccount(s);
+        }
+
+        @Override
+        public boolean hasAccount(OfflinePlayer offlinePlayer, String s) {
+            return true;
         }
 
         @Override
